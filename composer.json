@@ -1,0 +1,33 @@
+{
+    "name": "raiffeisen/azure-sdk-for-php",
+    "description": "This repository is for active development of the Azure SDK for PHP.",
+    "authors": [
+        {
+            "name": "Simon Karlen",
+            "email": "simon.karlen@raiffeisen.ch"
+        }
+    ],
+    "support": {
+        "source": "https://github.com/raiffeisen/azure-sdk-for-php",
+        "issues": "https://github.com/raiffeisen/azure-sdk-for-php/issues"
+    },
+    "require": {
+        "php": ">=7.3",
+        "ext-intl": "*",
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^7.4.5"
+    },
+    "require-dev": {
+
+    },
+    "autoload": {
+        "psr-4": {
+            "Azure\\": "sdk"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.0.x-dev"
+        }
+    }
+}
