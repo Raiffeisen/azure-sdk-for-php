@@ -12,7 +12,7 @@
         "issues": "https://github.com/raiffeisen/azure-sdk-for-php/issues"
     },
     "require": {
-        "php": ">=7.3",
+        "php": ">=7.4",
         "ext-intl": "*",
         "ext-json": "*",
         "guzzlehttp/guzzle": "^7.4.5"

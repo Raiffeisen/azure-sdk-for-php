@@ -4,7 +4,7 @@
 [![Total Downloads](https://poser.pugx.org/raiffeisen/azure-sdk-for-php/downloads?style=flat-square)](https://packagist.org/packages/raiffeisen/azure-sdk-for-php)
 [![License](https://poser.pugx.org/raiffeisen/azure-sdk-for-php/license?style=flat-square)](https://packagist.org/packages/raiffeisen/azure-sdk-for-php)
 
-This repository is for active development of the Azure SDK for PHP. It's a port of [azure-sdk-for-net](https://github.com/Azure/azure-sdk-for-net).
+This repository is for active development of the Azure SDK for PHP.
 
 ## Getting started
 
