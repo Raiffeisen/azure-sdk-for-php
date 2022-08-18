@@ -1,6 +1,7 @@
 {
     "name": "raiffeisen/azure-sdk-for-php",
     "description": "This repository is for active development of the Azure SDK for PHP.",
+    "license": "MIT",
     "authors": [
         {
             "name": "Simon Karlen",
