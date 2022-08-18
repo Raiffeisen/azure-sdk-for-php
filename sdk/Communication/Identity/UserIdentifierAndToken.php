@@ -27,7 +27,9 @@ class UserIdentifierAndToken extends Model
         $data = Utils::jsonDecode($json, true);
         $result = new self();
         $result->identity = new Identity($data['identity']['id']);
-        $result->accessToken = new AccessToken($data['accessToken']['token'], $data['accessToken']['expiresOn']);
+        if (isset($data['accessToken'])) {
+            $result->accessToken = new AccessToken($data['accessToken']['token'], $data['accessToken']['expiresOn']);
+        }
 
         return $result;
     }
