@@ -160,10 +160,10 @@ class ConnectionString
         $segmentStart = -1;
         $segmentEnd = 0;
 
-        while (self::tryGetNextSegment($connectionString, $separator, $segmentStart, $segmentStart)) {
-            $kvSeparatorIndex = strpos($connectionString, $keywordValueSeparator, $segmentEnd - $segmentStart);
+        while (self::tryGetNextSegment($connectionString, $separator, $segmentStart, $segmentEnd)) {
+            $kvSeparatorIndex = strpos($connectionString, $keywordValueSeparator, $segmentStart);
             $keywordStart = self::getStart($connectionString, $segmentStart);
-            $keyLength = self::getLength($connectionString, $segmentStart, $kvSeparatorIndex);
+            $keyLength = self::getLength($connectionString, $keywordStart, $kvSeparatorIndex);
 
             $keyword = substr($connectionString, $keywordStart, $keyLength);
             if (array_key_exists($keyword, $pairs)) {

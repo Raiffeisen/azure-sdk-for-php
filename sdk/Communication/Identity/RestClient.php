@@ -7,6 +7,8 @@
 namespace Azure\Communication\Identity;
 
 use Azure\Core\Client;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -33,62 +35,77 @@ class RestClient extends Client
     }
 
     /**
-     * {@inheritDoc}
+     * This function is called before every operation.
+     * @param string $method The HTTP transfer method.
+     * @param string $uri The uri endpoint.
+     * @param array $options Request options to apply to the given request and to the transfer.
      */
-    protected function beforeSend(RequestInterface $request, array $options = []): void
+    protected function beforeSend(string $method, string $uri, array &$options = []): void
     {
-        $request->getUri()->withQuery('api-version=' . $this->apiVersion);
-        $contentHash = $this->createContentHash($request);
-        $this->addHeaders($request, $contentHash);
+        $options[RequestOptions::QUERY] = [
+            'api-version' => $this->apiVersion
+        ];
+        $contentHash = $this->createContentHash($options[RequestOptions::BODY] ?? '');
+        $this->addHeaders($method, $uri, $options, $contentHash);
     }
 
     /**
      * {@inheritDoc}
-     * @throws \Exception
      */
-    protected function afterSend(ResponseInterface $response): void
+    public function request(string $method, $uri = '', array $options = []): ResponseInterface
     {
-        if (substr($response->getStatusCode(), 0, 1) !== '2') {
-            throw new \Exception($response->getReasonPhrase());
-        }
+        $this->beforeSend($method, $uri, $options);
+        return parent::request($method, $uri, $options);
     }
 
     /**
      * Create the content hash out of a request
-     * @param RequestInterface $request The request
+     * @param string $body The request body
      * @return string The content hash
      */
-    private final function createContentHash(RequestInterface $request): string
+    private function createContentHash(string $body): string
     {
-        return base64_encode(hash('sha256', $request->getBody()->getContents()));
+        return base64_encode(hash('sha256', $body));
     }
 
     /**
      * Add the needed headers to the request
-     * @param RequestInterface $request The request
+     * @param string $method The request
+     * @param string $uri The request target
+     * @param array $options The request options
      * @param string $contentHash The content hash
      * @return void
      */
-    private final function addHeaders(RequestInterface $request, string $contentHash): void
+    private function addHeaders(string $method, string $uri, array &$options, string $contentHash): void
     {
         $utcNowString = gmdate('D, d M Y H:i:s') . ' GMT';
+        $target = $uri;
+        if ($target === '') {
+            $target = '/';
+        }
+        if (!empty($options[RequestOptions::QUERY])) {
+            $target .= '?' . http_build_query($options[RequestOptions::QUERY]);
+        }
+        /** @var Request $request */
         $authorization = utf8_encode(sprintf(
             "%s\n%s\n%s;%s;%s",
-            $request->getMethod(),
-            $request->getRequestTarget(),
+            $method,
+            $target,
             $utcNowString,
-            $request->getUri()->getAuthority(),
+            '', // $request->getUri()->getAuthority()
             $contentHash
         ));
         $signature = hash_hmac('sha256', $authorization, base64_decode($this->_keyCredential));
 
-        $request->withAddedHeader(self::CONTENT_HEADER_NAME, $contentHash)
-            ->withAddedHeader(self::DATE_HEADER_NAME, $utcNowString)
-            ->withAddedHeader('Authorization', sprintf(
+        $options[RequestOptions::HEADERS] = [
+            self::CONTENT_HEADER_NAME => $contentHash,
+            self::DATE_HEADER_NAME => $utcNowString,
+            'Authorization' => sprintf(
                 'HMAC-SHA256 SignedHeaders=%s;host;%s&Signature=%s',
                 self::DATE_HEADER_NAME,
                 self::CONTENT_HEADER_NAME,
                 $signature
-            ));
+            )
+        ];
     }
 }
