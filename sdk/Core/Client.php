@@ -18,6 +18,11 @@ abstract class Client extends \GuzzleHttp\Client
     protected string $apiVersion;
 
     /**
+     * @var array The baseUri parsed
+     */
+    protected array $baseUri;
+
+    /**
      * Initialize
      * @param string $endpoint The endpoint URL.
      * @param string $apiVersion The api version.
@@ -27,6 +32,8 @@ abstract class Client extends \GuzzleHttp\Client
     {
         $this->apiVersion = $apiVersion;
         $config['base_uri'] = $endpoint;
+
+        $this->baseUri = parse_url($endpoint);
 
         parent::__construct($config);
     }

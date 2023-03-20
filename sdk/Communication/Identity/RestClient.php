@@ -9,7 +9,6 @@ namespace Azure\Communication\Identity;
 use Azure\Core\Client;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\RequestOptions;
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
 class RestClient extends Client
@@ -55,6 +54,7 @@ class RestClient extends Client
     public function request(string $method, $uri = '', array $options = []): ResponseInterface
     {
         $this->beforeSend($method, $uri, $options);
+
         return parent::request($method, $uri, $options);
     }
 
@@ -65,7 +65,7 @@ class RestClient extends Client
      */
     private function createContentHash(string $body): string
     {
-        return base64_encode(hash('sha256', $body));
+        return hash('sha256', $body);
     }
 
     /**
@@ -92,10 +92,10 @@ class RestClient extends Client
             $method,
             $target,
             $utcNowString,
-            '', // $request->getUri()->getAuthority()
+            $this->baseUri['host'] ?? '', // $request->getUri()->getAuthority()
             $contentHash
         ));
-        $signature = hash_hmac('sha256', $authorization, base64_decode($this->_keyCredential));
+        $signature = base64_encode(hash_hmac('sha256', $authorization, base64_decode($this->_keyCredential)));
 
         $options[RequestOptions::HEADERS] = [
             self::CONTENT_HEADER_NAME => $contentHash,
