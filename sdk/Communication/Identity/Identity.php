@@ -17,10 +17,11 @@ class Identity extends Model
 {
     /**
      * Initialize a new communication identity.
-     * @param string|null $id Identifier of the identity.
+     * @param string $id Identifier of the identity.
      */
-    public function __construct(?string $id = null)
+    public function __construct(string $id, array $config = [])
     {
         $this->id = $id;
+        parent::__construct($config);
     }
 }

@@ -7,7 +7,6 @@
 namespace Azure\Communication\Identity;
 
 use Azure\Core\Client;
-use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 
@@ -34,6 +33,15 @@ class RestClient extends Client
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function request(string $method, $uri = '', array $options = []): ResponseInterface
+    {
+        $this->beforeSend($method, $uri, $options);
+        return parent::request($method, $uri, $options);
+    }
+
+    /**
      * This function is called before every operation.
      * @param string $method The HTTP transfer method.
      * @param string $uri The uri endpoint.
@@ -44,28 +52,24 @@ class RestClient extends Client
         $options[RequestOptions::QUERY] = [
             'api-version' => $this->apiVersion
         ];
-        $contentHash = $this->createContentHash($options[RequestOptions::BODY] ?? '');
+
+        $body = '';
+        if (array_key_exists(RequestOptions::JSON, $options)) {
+            $body = json_encode($options[RequestOptions::JSON]);
+        }
+
+        $contentHash = $this->createContentHash($body);
         $this->addHeaders($method, $uri, $options, $contentHash);
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public function request(string $method, $uri = '', array $options = []): ResponseInterface
-    {
-        $this->beforeSend($method, $uri, $options);
-
-        return parent::request($method, $uri, $options);
-    }
-
-    /**
      * Create the content hash out of a request
-     * @param string $body The request body
+     * @param string $body json encoded body
      * @return string The content hash
      */
     private function createContentHash(string $body): string
     {
-        return hash('sha256', $body);
+        return base64_encode(hash('sha256', $body, true));
     }
 
     /**
@@ -83,29 +87,40 @@ class RestClient extends Client
         if ($target === '') {
             $target = '/';
         }
+        if (!str_starts_with($target, '/')) {
+            $target = '/' . $target;
+        }
         if (!empty($options[RequestOptions::QUERY])) {
             $target .= '?' . http_build_query($options[RequestOptions::QUERY]);
         }
-        /** @var Request $request */
-        $authorization = utf8_encode(sprintf(
+
+        $stringToSign = mb_convert_encoding(sprintf(
             "%s\n%s\n%s;%s;%s",
             $method,
             $target,
             $utcNowString,
-            $this->baseUri['host'] ?? '', // $request->getUri()->getAuthority()
+            $this->baseUri['host'] ?? '',
             $contentHash
-        ));
-        $signature = base64_encode(hash_hmac('sha256', $authorization, base64_decode($this->_keyCredential)));
+        ), 'UTF-8');
 
-        $options[RequestOptions::HEADERS] = [
-            self::CONTENT_HEADER_NAME => $contentHash,
-            self::DATE_HEADER_NAME => $utcNowString,
-            'Authorization' => sprintf(
-                'HMAC-SHA256 SignedHeaders=%s;host;%s&Signature=%s',
-                self::DATE_HEADER_NAME,
-                self::CONTENT_HEADER_NAME,
-                $signature
-            )
-        ];
+        $decodedKey = base64_decode($this->_keyCredential);
+        $hashedBytes = hash_hmac("sha256", $stringToSign, $decodedKey, true);
+        $signature = base64_encode($hashedBytes);
+
+        $options[RequestOptions::HEADERS] = array_merge(
+            [
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                self::DATE_HEADER_NAME => $utcNowString,
+                self::CONTENT_HEADER_NAME => $contentHash,
+                'Authorization' => sprintf(
+                    'HMAC-SHA256 SignedHeaders=%s;host;%s&Signature=%s',
+                    self::DATE_HEADER_NAME,
+                    self::CONTENT_HEADER_NAME,
+                    $signature
+                )
+            ],
+            $options[RequestOptions::HEADERS] ?? []
+        );
     }
 }

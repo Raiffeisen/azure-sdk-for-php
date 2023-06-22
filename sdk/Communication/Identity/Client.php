@@ -7,6 +7,7 @@
 namespace Azure\Communication\Identity;
 
 use Azure\Core\ConnectionString;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 
 class Client
@@ -24,7 +25,7 @@ class Client
      * @param string $connectionString Connection string acquired from the Azure Communication Services resource.
      * @param array $options Client option exposing apiVersion, Guzzle http client options
      * @throws \Exception
-     * @see \GuzzleHttp\RequestOptions
+     * @see RequestOptions
      */
     public function __construct(string $connectionString, array $options = [])
     {
@@ -51,25 +52,23 @@ class Client
      * Create a new identity.
      * @param string[] $scopes Also create access token for the created identity. One of the Client::SCOPE_* constants.
      * @return UserIdentifierAndToken
-     * @throws \GuzzleHttp\Exception\GuzzleException|\Exception
+     * @throws GuzzleException|\Exception
      */
-    public function createUser(array $scopes = []): UserIdentifierAndToken
+    public function CreateUserAndToken(array $scopes = []): UserIdentifierAndToken
     {
         foreach ($scopes as $scope) {
             if ($scope !== self::SCOPE_CHAT && $scope !== self::SCOPE_VOIP) {
                 throw new \Exception("Invalid scope '$scope'");
             }
         }
-        $body = ['createTokenWithScopes' => []];
+        $body = [
+            'createTokenWithScopes' => []
+        ];
         if (!empty($scopes)) {
             $body['createTokenWithScopes'] = array_values($scopes);
         }
 
         $response = $this->_restClient->post('identities', [
-            RequestOptions::HEADERS => [
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json'
-            ],
             RequestOptions::JSON => $body
         ]);
 
@@ -78,19 +77,32 @@ class Client
 
     /**
      * Delete the identity, revoke all tokens for the identity and delete all associated data.
-     * @param UserIdentifierAndToken $communicationUser The user to be deleted.
+     * @param UserIdentifierAndToken|string $communicationUser The user to be deleted.
      * @return boolean
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
-    public function deleteUser(UserIdentifierAndToken $communicationUser): bool
+    public function deleteUser(UserIdentifierAndToken|string $communicationUser): bool
     {
-        $response = $this->_restClient->delete('identities/' . $communicationUser->identity->id, [
-            RequestOptions::HEADERS => [
-                'Accept' => 'application/json'
-            ]
-        ]);
+        if ($communicationUser instanceof UserIdentifierAndToken) {
+            $communicationUser = $communicationUser->identity->id;
+        }
 
-        return substr($response->getStatusCode(), 0, 1) === '2';
+        $response = $this->_restClient->delete('identities/' . $communicationUser);
+
+        return str_starts_with($response->getStatusCode(), '2');
+    }
+
+    /**
+     * Exchange an Azure Active Directory (Azure AD) access token of a Teams user for a new Communication Identity access token with a matching expiration time.
+     * @param string $appId Client ID of an Azure AD application to be verified against the appid claim in the Azure AD access token.
+     * @param string $token Azure AD access token of a Teams User to acquire a new Communication Identity access token.
+     * @param string $userId Object ID of an Azure AD user (Teams User) to be verified against the oid claim in the Azure AD access token.
+     * @return void
+     * @throws \Exception
+     */
+    public function exchangeAccessToken(string $appId, string $token, string $userId): void
+    {
+        throw new \Exception('Not implemented yet');
     }
 
     /**
@@ -98,10 +110,10 @@ class Client
      * @param UserIdentifierAndToken $communicationUser Identifier of the identity to issue token for.
      * @param array $scopes Also create access token for the created identity. One of the Client::SCOPE_* constants.
      * @return UserIdentifierAndToken
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      * @throws \Exception
      */
-    public function getToken(UserIdentifierAndToken $communicationUser, array $scopes): UserIdentifierAndToken
+    public function issueToken(UserIdentifierAndToken $communicationUser, array $scopes): UserIdentifierAndToken
     {
         foreach ($scopes as $scope) {
             if ($scope !== self::SCOPE_CHAT && $scope !== self::SCOPE_VOIP) {
@@ -114,10 +126,6 @@ class Client
         }
 
         $response = $this->_restClient->post('identities/' . $communicationUser->identity->id . '/:issueAccessToken', [
-            RequestOptions::HEADERS => [
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json'
-            ],
             RequestOptions::JSON => $body
         ]);
         $communicationUser->accessToken = AccessToken::fromJson($response->getBody()->getContents());
@@ -129,16 +137,11 @@ class Client
      * Revoke all access tokens for the specific identity.
      * @param UserIdentifierAndToken $communicationUser Identifier of the identity.
      * @return bool
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
     public function revokeTokens(UserIdentifierAndToken $communicationUser): bool
     {
-        $response = $this->_restClient->post('identities/' . $communicationUser->identity->id . '/:revokeAccessTokens', [
-            RequestOptions::HEADERS => [
-                'Accept' => 'application/json'
-            ]
-        ]);
-
-        return substr($response->getStatusCode(), 0, 1) === '2';
+        $response = $this->_restClient->post('identities/' . $communicationUser->identity->id . '/:revokeAccessTokens');
+        return str_starts_with($response->getStatusCode(), '2');
     }
 }

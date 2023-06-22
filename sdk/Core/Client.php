@@ -6,10 +6,6 @@
 
 namespace Azure\Core;
 
-use GuzzleHttp\Promise\PromiseInterface;
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
-
 abstract class Client extends \GuzzleHttp\Client
 {
     /**
@@ -28,7 +24,7 @@ abstract class Client extends \GuzzleHttp\Client
      * @param string $apiVersion The api version.
      * @param array $config Client configuration settings.
      */
-    public function __construct(string $endpoint, string $apiVersion = '2022-06-01', array $config = [])
+    public function __construct(string $endpoint, string $apiVersion, array $config = [])
     {
         $this->apiVersion = $apiVersion;
         $config['base_uri'] = $endpoint;

@@ -8,9 +8,9 @@ namespace Azure\Core;
 
 class ConnectionString
 {
-    private $_pairs;
-    private $_pairSeparator;
-    private $_keywordValueSeparator;
+    private array $_pairs;
+    private string $_pairSeparator;
+    private string $_keywordValueSeparator;
 
     /**
      * @param array $pairs
@@ -89,7 +89,7 @@ class ConnectionString
      * @param string $value The new value.
      * @return void
      */
-    public function replace(string $keyword, string $value)
+    public function replace(string $keyword, string $value): void
     {
         if ($this->containsSegmentKey($keyword)) {
             $this->_pairs[$keyword] = $value;
@@ -102,7 +102,7 @@ class ConnectionString
      * @param string $value The value for the keyword.
      * @return void
      */
-    public function add(string $keyword, string $value)
+    public function add(string $keyword, string $value): void
     {
         if (!$this->containsSegmentKey($keyword)) {
             $this->_pairs[$keyword] = $value;
@@ -205,7 +205,7 @@ class ConnectionString
      * @return void
      * @throws \Exception
      */
-    private static function validate(string $connectionString, string $segmentSeparator = ';', string $keywordValueSeparator = '=', bool $allowEmptyValues = false)
+    private static function validate(string $connectionString, string $segmentSeparator = ';', string $keywordValueSeparator = '=', bool $allowEmptyValues = false): void
     {
         $segmentStart = -1;
         $segmentEnd = 0;

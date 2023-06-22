@@ -17,6 +17,27 @@ class Model implements \IteratorAggregate, \ArrayAccess
     private array $_attributes = [];
 
     /**
+     * Constructor.
+     *
+     * Initializes the object with the given configuration `$config`.
+     *
+     * If this method is overridden in a child class, it is recommended that
+     *
+     * - the last parameter of the constructor is a configuration array, like `$config` here.
+     * - call the parent implementation at the end of the constructor.
+     *
+     * @param array $config name-value pairs that will be used to initialize the object properties
+     */
+    public function __construct(array $config = [])
+    {
+        if (!empty($config)) {
+            foreach ($config as $name => $value) {
+                $this->$name = $value;
+            }
+        }
+    }
+
+    /**
      * @param string $name
      * @return mixed
      * @throws \Exception
@@ -39,7 +60,7 @@ class Model implements \IteratorAggregate, \ArrayAccess
      * @param mixed $value
      * @return void
      */
-    public function __set(string $name, $value)
+    public function __set(string $name, mixed $value)
     {
         $method = 'set' . ucfirst($name);
         if (method_exists($this, $method)) {
@@ -52,7 +73,7 @@ class Model implements \IteratorAggregate, \ArrayAccess
     /**
      * {@inheritDoc}
      */
-    public function getIterator()
+    public function getIterator(): \Traversable
     {
         return new \ArrayIterator($this->_attributes);
     }
@@ -68,7 +89,7 @@ class Model implements \IteratorAggregate, \ArrayAccess
     /**
      * {@inheritDoc}
      */
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         return $this->_attributes[$offset] ?? null;
     }
@@ -76,7 +97,7 @@ class Model implements \IteratorAggregate, \ArrayAccess
     /**
      * {@inheritDoc}
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         $this->_attributes[$offset] = $value;
     }
@@ -84,8 +105,21 @@ class Model implements \IteratorAggregate, \ArrayAccess
     /**
      * {@inheritDoc}
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         unset($this->_attributes[$offset]);
+    }
+
+    /**
+     * Parses a date time string to a \DateTime object
+     * @param string $value
+     * @return \DateTime|false
+     * @throws \Exception
+     */
+    public function parseDateTime(string $value): \DateTime|false
+    {
+        $value = \DateTime::createFromFormat("Y-m-d\TH:i:s\Z", $value, new \DateTimeZone('UTC'));
+        $value->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+        return $value;
     }
 }

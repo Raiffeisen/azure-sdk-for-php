@@ -11,27 +11,46 @@ use GuzzleHttp\Utils;
 
 /**
  * An access token.
- *
- * @property string $expiresOn The expiry time of the token.
- * @property string $token The access token issued for the identity.
  */
 class AccessToken extends Model
 {
+    /** @var \DateTime The expiry time of the token. */
+    public \DateTime $expiresOn;
+
+    /** @var string The access token issued for the identity. */
+    public string $token;
+
     /**
      * Initialize a new access token.
-     * @param string|null $token The access token issued for the identity.
-     * @param string|null $expiresOn The expiry time of the token.
+     * @param string $token The access token issued for the identity.
+     * @param string $expiresOn The expiry time of the token.
+     * @throws \Exception
      */
-    public function __construct(?string $token = null, ?string $expiresOn = null)
+    public function __construct(string $token, string $expiresOn, array $config = [])
     {
         $this->token = $token;
-        $this->expiresOn = $expiresOn;
+        $this->expiresOn = $this->parseDateTime($expiresOn);
+        parent::__construct($config);
+    }
+
+    /**
+     * Parses a date time string to a \DateTime object
+     * @param string $value
+     * @return \DateTime|false
+     * @throws \Exception
+     */
+    public function parseDateTime(string $value): \DateTime|false
+    {
+        $value = new \DateTime($value, new \DateTimeZone('UTC'));
+        $value->setTimezone(new \DateTimeZone(date_default_timezone_get()));
+        return $value;
     }
 
     /**
      * Initialize a new AccessToken from json data.
      * @param string $json The json data to parse.
      * @return static
+     * @throws \Exception
      */
     public static function fromJson(string $json): self
     {

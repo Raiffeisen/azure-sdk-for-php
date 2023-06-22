@@ -11,26 +11,27 @@ use GuzzleHttp\Utils;
 
 /**
  * A communication identity with access token.
- *
- * @property AccessToken $accessToken An access token.
- * @property Identity $identity A communication identity.
  */
 class UserIdentifierAndToken extends Model
 {
+    /** @var AccessToken An access token. */
+    public AccessToken $accessToken;
+
+    /** @var Identity A communication identity. */
+    public Identity $identity;
+
     /**
      * Initialize a new UserIdentifierAndToken from json data.
      * @param string $json The json data to parse.
      * @return static
+     * @throws \Exception
      */
     public static function fromJson(string $json): self
     {
         $data = Utils::jsonDecode($json, true);
-        $result = new self();
-        $result->identity = new Identity($data['identity']['id']);
-        if (isset($data['accessToken'])) {
-            $result->accessToken = new AccessToken($data['accessToken']['token'], $data['accessToken']['expiresOn']);
-        }
-
-        return $result;
+        return new self([
+            'identity' => new Identity($data['identity']['id']),
+            'accessToken' => new AccessToken($data['accessToken']['token'], $data['accessToken']['expiresOn'])
+        ]);
     }
 }
